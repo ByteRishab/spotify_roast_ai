@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Roast My Playlist 🔥</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0f0e17;
+      --surface:  #1a1830;
+      --card:     #211f35;
+      --border:   rgba(255,255,255,0.08);
+      --accent:   #ff4d6d;
+      --accent2:  #ffbe0b;
+      --accent3:  #06d6a0;
+      --spotify:  #1DB954;
+      --text:     #fffffe;
+      --muted:    #a7a9be;
+      --radius:   20px;
+      --shadow:   0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Nunito', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* animated noise-grain background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 0 16px env(safe-area-inset-bottom, 24px);
+    }
+
+    /* ── Typography ── */
+    .display { font-family: 'Boogaloo', cursive; }
+
+    /* ── Blobs ── */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .blob-1 { width: 300px; height: 300px; background: var(--accent);  top: -80px; right: -80px; }
+    .blob-2 { width: 250px; height: 250px; background: var(--accent2); bottom: 10%; left: -100px; }
+    .blob-3 { width: 200px; height: 200px; background: var(--accent3); top: 40%; right: -60px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      border-radius: 999px;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.12s, box-shadow 0.12s;
+      min-height: 52px;
+      padding: 0 28px;
+      text-decoration: none;
+      letter-spacing: 0.3px;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn:hover  { transform: scale(1.04); }
+
+    .btn-spotify {
+      background: var(--spotify);
+      color: #000;
+      box-shadow: 0 4px 20px rgba(29,185,84,0.4);
+      animation: pulse-green 2.5s infinite;
+      width: 100%;
+      font-size: 1.1rem;
+    }
+    @keyframes pulse-green {
+      0%, 100% { box-shadow: 0 4px 20px rgba(29,185,84,0.4); }
+      50%       { box-shadow: 0 4px 40px rgba(29,185,84,0.75); }
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 18px rgba(255,77,109,0.4);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 2px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-yellow {
+      background: var(--accent2);
+      color: #000;
+      box-shadow: 0 4px 18px rgba(255,190,11,0.35);
+    }
+    .btn-teal {
+      background: var(--accent3);
+      color: #000;
+      box-shadow: 0 4px 18px rgba(6,214,160,0.35);
+    }
+
+    /* ── SCREENS ── */
+    .screen { display: none; flex-direction: column; min-height: 100vh; padding-top: 32px; }
+    .screen.active { display: flex; }
+
+    /* ════════════════════════════════
+       SCREEN 1 — LANDING
+    ════════════════════════════════ */
+    #screen-landing {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 0;
+      padding-bottom: 40px;
+    }
+
+    .mascot {
+      font-size: 6rem;
+      line-height: 1;
+      animation: float 3s ease-in-out infinite;
+      margin-bottom: 8px;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(-4deg); }
+      50%       { transform: translateY(-14px) rotate(4deg); }
+    }
+
+    .landing-title {
+      font-size: 3rem;
+      line-height: 1.05;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .landing-title span { color: var(--accent); }
+
+    .landing-tagline {
+      font-size: 1rem;
+      color: var(--muted);
+      margin-bottom: 40px;
+      font-weight: 600;
+    }
+
+    .landing-btn-wrap {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .pill-badge {
+      display: inline-block;
+      background: rgba(255,190,11,0.15);
+      color: var(--accent2);
+      border: 1px solid rgba(255,190,11,0.3);
+      border-radius: 999px;
+      padding: 4px 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      letter-spacing: 0.5px;
+    }
+
+    .features-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 32px;
+      width: 100%;
+    }
+    .feature-chip {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 8px;
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .feature-chip .icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+
+    /* ════════════════════════════════
+       SCREEN 2 — PLAYLISTS
+    ════════════════════════════════ */
+    #screen-playlists { gap: 0; padding-bottom: 32px; }
+
+    .screen-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0 24px;
+    }
+    .screen-header h2 { font-family: 'Boogaloo', cursive; font-size: 1.8rem; }
+    .screen-header .sub { color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+
+    .logout-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .playlist-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .playlist-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.18s, box-shadow 0.18s;
+      position: relative;
+    }
+    .playlist-card:hover  { transform: translateY(-4px) rotate(1deg); box-shadow: var(--shadow); }
+    .playlist-card:active { transform: scale(0.96); }
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-2deg) translateY(-2px); }
+      75% { transform: rotate(2deg)  translateY(-2px); }
+    }
+    .playlist-card:hover { animation: wiggle 0.4s ease; }
+
+    .playlist-card-art {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+    }
+    .playlist-card-art img { width: 100%; height: 100%; object-fit: cover; }
+
+    .playlist-card-body { padding: 10px 12px 12px; }
+    .playlist-card-name {
+      font-weight: 800;
+      font-size: 0.85rem;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .playlist-card-count { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+
+    .playlist-card-hover-label {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,77,109,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Boogaloo', cursive;
+      font-size: 1.1rem;
+      color: #fff;
+      opacity: 0;
+      transition: opacity 0.18s;
+      border-radius: var(--radius);
+    }
+    .playlist-card:hover .playlist-card-hover-label { opacity: 1; }
+
+    .loading-playlists {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 60px 0;
+      color: var(--muted);
+    }
+    .spinner-small {
+      width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    /* ════════════════════════════════
+       SCREEN 3 — LOADING
+    ════════════════════════════════ */
+    #screen-loading {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 32px;
+    }
+
+    .vinyl {
+      width: 160px;
+      height: 160px;
+      position: relative;
+      animation: spin 1.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .vinyl-outer {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: conic-gradient(
+        #1a1a1a 0deg, #2a2a2a 10deg, #1a1a1a 20deg,
+        #2a2a2a 30deg, #1a1a1a 40deg, #2a2a2a 50deg,
+        #1a1a1a 60deg, #2a2a2a 70deg, #1a1a1a 80deg,
+        #2a2a2a 90deg, #1a1a1a 100deg, #2a2a2a 110deg,
+        #1a1a1a 120deg, #2a2a2a 130deg, #1a1a1a 140deg,
+        #2a2a2a 150deg, #1a1a1a 160deg, #2a2a2a 170deg,
+        #1a1a1a 180deg, #2a2a2a 190deg, #1a1a1a 200deg,
+        #2a2a2a 210deg, #1a1a1a 220deg, #2a2a2a 230deg,
+        #1a1a1a 240deg, #2a2a2a 250deg, #1a1a1a 260deg,
+        #2a2a2a 270deg, #1a1a1a 280deg, #2a2a2a 290deg,
+        #1a1a1a 300deg, #2a2a2a 310deg, #1a1a1a 320deg,
+        #2a2a2a 330deg, #1a1a1a 340deg, #2a2a2a 350deg, #1a1a1a 360deg
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 40px rgba(255,77,109,0.3);
+    }
+
+    .vinyl-label {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+    }
+
+    .loading-msg {
+      font-family: 'Boogaloo', cursive;
+      font-size: 1.5rem;
+      color: var(--text);
+      min-height: 2.2rem;
+      transition: opacity 0.4s;
+    }
+    .loading-sub { color: var(--muted); font-size: 0.9rem; }
+
+    /* ════════════════════════════════
+       SCREEN 4 — ROAST
+    ════════════════════════════════ */
+    #screen-roast { gap: 0; padding-bottom: 40px; }
+
+    .roast-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 24px 0 20px;
+      gap: 12px;
+    }
+
+    .roast-cover {
+      width: 110px;
+      height: 110px;
+      border-radius: 16px;
+      object-fit: cover;
+      background: var(--card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+      border: 3px solid var(--accent);
+    }
+    .roast-cover img { width: 100%; height: 100%; object-fit: cover; border-radius: 13px; }
+
+    .roast-playlist-name {
+      font-family: 'Boogaloo', cursive;
+      font-size: 1.4rem;
+      color: var(--accent2);
+    }
+    .roast-track-count { font-size: 0.8rem; color: var(--muted); }
+
+    /* Comic speech bubble */
+    .speech-bubble {
+      position: relative;
+      background: var(--surface);
+      border: 3px solid var(--accent);
+      border-radius: 24px;
+      padding: 24px;
+      margin: 8px 0 24px;
+      animation: bounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes bounceIn {
+      0%   { transform: scale(0.7) translateY(20px); opacity: 0; }
+      100% { transform: scale(1) translateY(0);      opacity: 1; }
+    }
+    .speech-bubble::before {
+      content: '';
+      position: absolute;
+      top: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 11px solid transparent;
+      border-bottom-color: var(--accent);
+    }
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      top: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 9px solid transparent;
+      border-bottom-color: var(--surface);
+    }
+
+    .roast-fire { font-size: 1.5rem; margin-bottom: 8px; }
+
+    .roast-text {
+      font-size: 1rem;
+      line-height: 1.65;
+      color: var(--text);
+      font-weight: 600;
+      min-height: 80px;
+    }
+
+    .roast-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .roast-actions-row {
+      display: flex;
+      gap: 10px;
+    }
+    .roast-actions-row .btn { flex: 1; font-size: 0.85rem; padding: 0 12px; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 12px 24px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+      box-shadow: var(--shadow);
+      z-index: 999;
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.error { border-color: var(--accent); color: var(--accent); }
+    .toast.success { border-color: var(--accent3); color: var(--accent3); }
+
+    /* ── Skeleton loader ── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--card) 25%, var(--surface) 50%, var(--card) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.2s infinite;
+      border-radius: 10px;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+  </style>
+</head>
+<body>
+
+  <!-- Background blobs -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <div class="app">
+
+    <!-- ══ SCREEN 1: LANDING ══ -->
+    <div id="screen-landing" class="screen {% if logged_in %}{% else %}active{% endif %}">
+      <div class="mascot">🛸</div>
+      <span class="pill-badge">✨ AI-powered taste evaluation</span>
+      <h1 class="landing-title display">Roast My<br><span>Playlist</span></h1>
+      <p class="landing-tagline">We listened so we could judge. 💀</p>
+
+      <div class="landing-btn-wrap">
+        {% if auth_error %}
+        <p style="color:var(--accent);font-size:.85rem;margin-bottom:8px;">Spotify said no 😬. Try again?</p>
+        {% endif %}
+        <a href="/login" class="btn btn-spotify">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+          Connect Spotify
+        </a>
+      </div>
+
+      <div class="features-row">
+        <div class="feature-chip"><span class="icon">🎵</span>Your Playlists</div>
+        <div class="feature-chip"><span class="icon">🤖</span>AI Roast</div>
+        <div class="feature-chip"><span class="icon">😭</span>The Truth</div>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN 2: PLAYLISTS ══ -->
+    <div id="screen-playlists" class="screen {% if logged_in %}active{% endif %}">
+      <div class="screen-header">
+        <div>
+          <h2>Pick your victim 🎯</h2>
+          <p class="sub">{% if user %}Hey {{ user.display_name }} 👋{% else %}Choose a playlist{% endif %}</p>
+        </div>
+        <a href="/logout" class="logout-btn">Log out</a>
+      </div>
+      <div class="playlist-grid" id="playlist-grid">
+        <div class="loading-playlists" style="grid-column:1/-1">
+          <div class="spinner-small"></div>
+          <div style="font-size:.85rem">Loading your playlists...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN 3: LOADING ══ -->
+    <div id="screen-loading" class="screen">
+      <div class="vinyl">
+        <div class="vinyl-outer">
+          <div class="vinyl-label">🔥</div>
+        </div>
+      </div>
+      <div>
+        <div class="loading-msg" id="loading-msg">Analyzing your questionable taste...</div>
+        <div class="loading-sub">The AI is judging you right now.</div>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN 4: ROAST RESULT ══ -->
+    <div id="screen-roast" class="screen">
+      <div class="roast-header">
+        <div class="roast-cover" id="roast-cover">🎵</div>
+        <div>
+          <div class="roast-playlist-name" id="roast-playlist-name">Playlist</div>
+          <div class="roast-track-count" id="roast-track-count"></div>
+        </div>
+      </div>
+
+      <div class="roast-fire">🔥🔥🔥</div>
+
+      <div class="speech-bubble">
+        <div class="roast-text" id="roast-text"></div>
+      </div>
+
+      <div class="roast-actions">
+        <button class="btn btn-accent" onclick="goToPlaylists()">🔁 Roast Another</button>
+        <div class="roast-actions-row">
+          <button class="btn btn-yellow" onclick="copyRoast()">📋 Copy</button>
+          <button class="btn btn-teal"   onclick="shareRoast()">🐦 Share</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /app -->
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ── State ─────────────────────────────────────────────────────────────────
+    const loggedIn = {{ 'true' if logged_in else 'false' }};
+    let currentRoastText = '';
+    let currentPlaylistName = '';
+
+    // ── Screen switching ──────────────────────────────────────────────────────
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+    function goToPlaylists() { showScreen('screen-playlists'); }
+
+    // ── Toast ─────────────────────────────────────────────────────────────────
+    let toastTimer;
+    function showToast(msg, type = '') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + type;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 3800);
+    }
+
+    // ── Typewriter ────────────────────────────────────────────────────────────
+    function typeWriter(el, text, speed = 18) {
+      el.textContent = '';
+      let i = 0;
+      function tick() {
+        if (i < text.length) {
+          el.textContent += text[i++];
+          setTimeout(tick, speed);
+        }
+      }
+      tick();
+    }
+
+    // ── Loading messages ──────────────────────────────────────────────────────
+    const loadingMessages = [
+      "Analyzing your questionable taste...",
+      "Consulting the music gods...",
+      "Oh wow. Okay. Just... wow.",
+      "This might sting a little.",
+      "Preparing your intervention.",
+      "Counting the heartbreak songs...",
+      "The AI is shaking its head.",
+      "Hold on, it's crying with laughter.",
+      "Almost done judging you.",
+    ];
+    let loadingInterval;
+
+    function startLoadingMessages() {
+      let i = 0;
+      const el = document.getElementById('loading-msg');
+      el.textContent = loadingMessages[0];
+      loadingInterval = setInterval(() => {
+        i = (i + 1) % loadingMessages.length;
+        el.style.opacity = '0';
+        setTimeout(() => {
+          el.textContent = loadingMessages[i];
+          el.style.opacity = '1';
+        }, 300);
+      }, 1800);
+    }
+
+    function stopLoadingMessages() {
+      clearInterval(loadingInterval);
+    }
+
+    // ── Load playlists ────────────────────────────────────────────────────────
+    async function loadPlaylists() {
+      const grid = document.getElementById('playlist-grid');
+
+      try {
+        const res  = await fetch('/api/playlists');
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          grid.innerHTML = `<div class="loading-playlists" style="grid-column:1/-1">
+            <div style="font-size:2rem;margin-bottom:8px">😬</div>
+            <div>Couldn't load playlists. <a href="/login" style="color:var(--accent)">Re-connect Spotify?</a></div>
+          </div>`;
+          return;
+        }
+
+        const playlists = data.playlists;
+        if (!playlists.length) {
+          grid.innerHTML = `<div class="loading-playlists" style="grid-column:1/-1">
+            <div style="font-size:2rem;margin-bottom:8px">🫙</div>
+            <div>No playlists found. Go make some music choices.</div>
+          </div>`;
+          return;
+        }
+
+        grid.innerHTML = playlists.map(p => `
+          <div class="playlist-card"
+               data-id="${p.id}"
+               data-name="${(p.name || '').replace(/"/g, '&quot;')}"
+               data-cover="${p.image_url || ''}">
+            <div class="playlist-card-art">
+              ${p.image_url
+                ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" />`
+                : '🎵'
+              }
+            </div>
+            <div class="playlist-card-body">
+              <div class="playlist-card-name">${p.name}</div>
+              <div class="playlist-card-count">${p.track_count} tracks</div>
+            </div>
+            <div class="playlist-card-hover-label">🔥 Roast this!</div>
+          </div>
+        `).join('');
+
+        // attach click listeners via event delegation (safe, no inline JS)
+        document.getElementById('playlist-grid').addEventListener('click', function(e) {
+          const card = e.target.closest('.playlist-card');
+          if (card) {
+            startRoast(card.dataset.id, card.dataset.name, card.dataset.cover);
+          }
+        });
+
+      } catch (err) {
+        console.error(err);
+        grid.innerHTML = `<div class="loading-playlists" style="grid-column:1/-1">
+          <div style="font-size:2rem">💀</div>
+          <div style="margin-top:8px">Something broke. Not your playlist's fault. (Actually maybe.)</div>
+        </div>`;
+      }
+    }
+
+    // ── Roast ─────────────────────────────────────────────────────────────────
+    async function startRoast(playlistId, playlistName, coverUrl) {
+      showScreen('screen-loading');
+      startLoadingMessages();
+
+      try {
+        const res  = await fetch('/api/roast', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playlist_id: playlistId, playlist_name: playlistName, cover_url: coverUrl })
+        });
+        const data = await res.json();
+        stopLoadingMessages();
+
+        if (res.status === 422) {
+          showScreen('screen-playlists');
+          showToast("Babe, that playlist is empty. Nothing to roast! 😐", 'error');
+          return;
+        }
+        if (!res.ok || data.error) {
+          showScreen('screen-playlists');
+          showToast("The AI couldn't handle it. Try again 😅", 'error');
+          return;
+        }
+
+        // Populate roast screen
+        currentRoastText    = data.roast;
+        currentPlaylistName = data.playlist_name;
+
+        document.getElementById('roast-playlist-name').textContent = data.playlist_name;
+        document.getElementById('roast-track-count').textContent   = `${data.track_count} tracks judged`;
+
+        const coverEl = document.getElementById('roast-cover');
+        if (data.cover_url) {
+          coverEl.innerHTML = `<img src="${data.cover_url}" alt="${data.playlist_name}" />`;
+        } else {
+          coverEl.textContent = '🎵';
+        }
+
+        showScreen('screen-roast');
+        const roastEl = document.getElementById('roast-text');
+        typeWriter(roastEl, data.roast, 20);
+
+      } catch (err) {
+        console.error(err);
+        stopLoadingMessages();
+        showScreen('screen-playlists');
+        showToast("Something went wrong. Even we're embarrassed. 😬", 'error');
+      }
+    }
+
+    // ── Copy ──────────────────────────────────────────────────────────────────
+    async function copyRoast() {
+      try {
+        await navigator.clipboard.writeText(currentRoastText);
+        showToast('Roast copied! 📋', 'success');
+      } catch {
+        showToast('Copy failed. Old school it — screenshot!', 'error');
+      }
+    }
+
+    // ── Share ─────────────────────────────────────────────────────────────────
+    async function shareRoast() {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: `Roast My Playlist — ${currentPlaylistName}`,
+            text: currentRoastText,
+          });
+        } catch {}
+      } else {
+        copyRoast();
+        showToast('Sharing not supported — copied instead!', 'success');
+      }
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    if (loggedIn) {
+      showScreen('screen-playlists');
+      loadPlaylists();
+    }
+
+    // Handle ?auth_error param
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('auth_error')) {
+      showToast("Spotify said no. Try again? 😬", 'error');
+      history.replaceState({}, '', '/');
+    }
+  </script>
+</body>
+</html>
